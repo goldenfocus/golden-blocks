@@ -75,11 +75,12 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
       var raf = 0, stars = [], dpr = window.devicePixelRatio || 1;
       var W, H, t = 0;
       var warp = 'none', warpT = 0;
-      var WARP_DUR = 12;
+      var WARP_DUR = 16;
       var activeNav = 'nav-0';
       var pendingTarget = null;
       var pendingHref = null;
       var flashAlpha = 0;
+      var hyperLines = [];
 
       var WARM = [[251,191,36],[245,158,11],[252,211,77],[217,119,6],[254,243,199]];
       var COOL = [[220,230,255],[200,210,240],[180,195,225],[240,245,255]];
@@ -110,6 +111,24 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
         for (var i = 0; i < COUNT; i++) stars.push(mkStar(true));
       }
 
+      function initHyper() {
+        hyperLines = [];
+        var maxR = Math.sqrt(W * W + H * H) * 0.55;
+        for (var i = 0; i < 500; i++) {
+          var angle = Math.random() * 6.28;
+          var innerR = 8 + Math.random() * maxR * 0.15;
+          var outerR = maxR * (0.4 + Math.random() * 0.6);
+          hyperLines.push({
+            angle: angle,
+            innerR: innerR,
+            outerR: outerR,
+            w: 0.2 + Math.random() * 0.8,
+            a: 0.3 + Math.random() * 0.7,
+            blue: Math.random() < 0.7,
+          });
+        }
+      }
+
       function draw() {
         t++;
         ctx.clearRect(0, 0, W, H);
@@ -122,87 +141,66 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
           p = Math.min(warpT / WARP_DUR, 1);
         }
 
-        var isReverse = warp === 'reverse';
-        var eased = isReverse ? (1 - p) * (1 - p) * (1 - p) : p * p * p;
-        var speedMult = isWarping ? 1 + eased * 300 : 1;
-
-        for (var i = 0; i < stars.length; i++) {
-          var s = stars[i];
-          if (isReverse) s.z += s.speed * speedMult;
-          else s.z -= s.speed * speedMult;
-          if (s.z < 0.04 || s.z > MAX_Z * 3) { stars[i] = mkStar(false); continue; }
-
-          var invZ = 1 / s.z;
-          var sx = cx + s.x * FOCAL * invZ;
-          var sy = cy + s.y * FOCAL * invZ;
-          if (sx < -300 || sx > W + 300 || sy < -300 || sy > H + 300) { stars[i] = mkStar(false); continue; }
-
-          var r = s.baseR * invZ * 2.5;
-          if (r > 6) r = 6;
-          var tw = Math.sin(t * s.ts + s.tp);
-          var depthA = Math.min(invZ * 1.1, 1);
-          var al = depthA * (0.35 + 0.65 * tw);
-          var col = 'rgba(' + s.c[0] + ',' + s.c[1] + ',' + s.c[2] + ',';
-
-          if (isWarping && eased > 0.01) {
-            var dx = sx - cx, dy = sy - cy;
-            var dist = Math.sqrt(dx * dx + dy * dy) || 1;
-            var nx = dx / dist, ny = dy / dist;
-            var streakLen = (4 + eased * 120) * (r + 0.5);
-            var dir = isReverse ? -1 : 1;
-            var endX = sx + nx * streakLen * dir;
-            var endY = sy + ny * streakLen * dir;
-            var sg = ctx.createLinearGradient(endX, endY, sx, sy);
-            sg.addColorStop(0, col + Math.min(al * (0.8 + eased), 1) + ')');
-            sg.addColorStop(1, col + '0)');
-            ctx.lineCap = 'round';
-            ctx.strokeStyle = sg;
-            ctx.lineWidth = Math.max(r * (0.4 + eased * 0.8), 0.4);
-            ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(endX, endY);
-            ctx.stroke();
-          }
-
-          if (!isWarping) {
+        if (!isWarping) {
+          for (var i = 0; i < stars.length; i++) {
+            var s = stars[i];
+            s.z -= s.speed;
+            if (s.z < 0.04) { stars[i] = mkStar(false); continue; }
+            var invZ = 1 / s.z;
+            var sx = cx + s.x * FOCAL * invZ;
+            var sy = cy + s.y * FOCAL * invZ;
+            if (sx < -300 || sx > W + 300 || sy < -300 || sy > H + 300) { stars[i] = mkStar(false); continue; }
+            var r = s.baseR * invZ * 2.5;
+            if (r > 6) r = 6;
+            var tw = Math.sin(t * s.ts + s.tp);
+            var depthA = Math.min(invZ * 1.1, 1);
+            var al = depthA * (0.35 + 0.65 * tw);
+            var col = 'rgba(' + s.c[0] + ',' + s.c[1] + ',' + s.c[2] + ',';
             if (r < 1.0 && al > 0.5) {
-              ctx.save();
-              ctx.globalAlpha = al * 0.4;
-              ctx.strokeStyle = col + '0.3)';
-              ctx.lineWidth = 0.4;
+              ctx.save(); ctx.globalAlpha = al * 0.4;
+              ctx.strokeStyle = col + '0.3)'; ctx.lineWidth = 0.4;
               var rl = r * 5;
               ctx.beginPath();
               ctx.moveTo(sx - rl, sy); ctx.lineTo(sx + rl, sy);
               ctx.moveTo(sx, sy - rl); ctx.lineTo(sx, sy + rl);
               ctx.stroke(); ctx.restore();
             }
-            if (r > 0.8 && r < 1.5) {
-              ctx.shadowColor = col + (al * 0.3) + ')';
-              ctx.shadowBlur = 4;
-            } else { ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; }
+            ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+            ctx.beginPath(); ctx.arc(sx, sy, Math.max(r, 0.15), 0, 6.28);
+            ctx.fillStyle = col + al + ')'; ctx.fill();
           }
-
-          ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
-          ctx.beginPath();
-          ctx.arc(sx, sy, Math.max(isWarping ? r * (1 - eased * 0.5) : r, 0.15), 0, 6.28);
-          ctx.fillStyle = col + al + ')';
-          ctx.fill();
         }
 
         if (isWarping) {
-          if (isReverse && p < 0.3) flashAlpha = 1 - p / 0.3;
-          else if (!isReverse && p > 0.6) flashAlpha = (p - 0.6) / 0.4;
+          var snap = Math.min(p * 8, 1);
+          var isReverse = warp === 'reverse';
+          var lineAlpha = isReverse ? (1 - p) : snap;
+
+          for (var j = 0; j < hyperLines.length; j++) {
+            var h = hyperLines[j];
+            var cos = Math.cos(h.angle), sin = Math.sin(h.angle);
+            var x1 = cx + cos * h.innerR;
+            var y1 = cy + sin * h.innerR;
+            var x2 = cx + cos * h.outerR;
+            var y2 = cy + sin * h.outerR;
+            var la = h.a * lineAlpha;
+            if (la < 0.02) continue;
+            var c = h.blue ? '180,200,255' : '240,245,255';
+            ctx.strokeStyle = 'rgba(' + c + ',' + la + ')';
+            ctx.lineWidth = h.w * lineAlpha;
+            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+            ctx.stroke();
+          }
+        }
+
+        if (isWarping && p > 0.7) {
+          flashAlpha = Math.min((p - 0.7) / 0.3, 1);
         }
         if (flashAlpha > 0) {
-          var maxDim = Math.max(W, H);
-          var fg = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxDim * 0.5);
-          fg.addColorStop(0, 'rgba(255,252,245,' + flashAlpha * 0.85 + ')');
-          fg.addColorStop(0.2, 'rgba(251,191,36,' + flashAlpha * 0.4 + ')');
-          fg.addColorStop(0.5, 'rgba(245,158,11,' + flashAlpha * 0.1 + ')');
-          fg.addColorStop(1, 'transparent');
-          ctx.fillStyle = fg;
+          ctx.fillStyle = 'rgba(235,240,255,' + flashAlpha * 0.85 + ')';
           ctx.fillRect(0, 0, W, H);
-
           if (!isWarping) {
-            flashAlpha -= 0.12;
+            flashAlpha -= 0.18;
             if (flashAlpha < 0) flashAlpha = 0;
           }
         }
@@ -226,6 +224,10 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
         if (nav) { nav.classList.remove('nav-visible'); nav.classList.add('nav-fading'); }
       }
 
+      function startWarpEffect() {
+        initHyper();
+      }
+
       function switchNav(targetId) {
         document.querySelectorAll('.spiral-nav').forEach(function (n) {
           n.hidden = true; n.classList.remove('nav-visible', 'nav-fading');
@@ -242,6 +244,7 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
         pendingTarget = opts.navId || null;
         pendingHref = opts.href || null;
         hideCurrentNav();
+        startWarpEffect();
       }
 
       menu.addEventListener('click', function (e) {
