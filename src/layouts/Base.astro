@@ -70,19 +70,20 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
       var menu = document.getElementById('spiral-menu');
       var backdrop = document.getElementById('spiral-backdrop');
       var canvas = document.getElementById('spiral-galaxy');
-      var flash = document.getElementById('warp-flash');
       if (!btn || !menu || !canvas) return;
       var ctx = canvas.getContext('2d');
       var raf = 0, stars = [], dpr = window.devicePixelRatio || 1;
       var W, H, t = 0;
-      var warp = 'none';
-      var warpT = 0;
-      var WARP_DUR = 50;
+      var warp = 'none', warpT = 0;
+      var WARP_DUR = 12;
       var activeNav = 'nav-0';
+      var pendingTarget = null;
+      var pendingHref = null;
+      var flashAlpha = 0;
 
       var WARM = [[251,191,36],[245,158,11],[252,211,77],[217,119,6],[254,243,199]];
       var COOL = [[220,230,255],[200,210,240],[180,195,225],[240,245,255]];
-      var MAX_Z = 6, FOCAL = 340, COUNT = 180;
+      var MAX_Z = 6, FOCAL = 340, COUNT = 200;
 
       function resize() {
         W = window.innerWidth; H = window.innerHeight;
@@ -113,49 +114,52 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
         t++;
         ctx.clearRect(0, 0, W, H);
         var cx = W * 0.5, cy = H * 0.5;
-        var isWarping = warp === 'forward' || warp === 'reverse';
-        var warpProgress = 0;
+        var isWarping = warp !== 'none';
+        var p = 0;
+
         if (isWarping) {
           warpT++;
-          warpProgress = Math.min(warpT / WARP_DUR, 1);
+          p = Math.min(warpT / WARP_DUR, 1);
         }
-        var speedMult = isWarping ? 1 + warpProgress * 80 : 1;
+
+        var isReverse = warp === 'reverse';
+        var eased = isReverse ? (1 - p) * (1 - p) * (1 - p) : p * p * p;
+        var speedMult = isWarping ? 1 + eased * 300 : 1;
 
         for (var i = 0; i < stars.length; i++) {
           var s = stars[i];
-          s.z -= s.speed * speedMult;
-          if (s.z < 0.06) { stars[i] = mkStar(false); continue; }
+          if (isReverse) s.z += s.speed * speedMult;
+          else s.z -= s.speed * speedMult;
+          if (s.z < 0.04 || s.z > MAX_Z * 3) { stars[i] = mkStar(false); continue; }
 
           var invZ = 1 / s.z;
           var sx = cx + s.x * FOCAL * invZ;
           var sy = cy + s.y * FOCAL * invZ;
-          if (sx < -200 || sx > W + 200 || sy < -200 || sy > H + 200) { stars[i] = mkStar(false); continue; }
+          if (sx < -300 || sx > W + 300 || sy < -300 || sy > H + 300) { stars[i] = mkStar(false); continue; }
 
           var r = s.baseR * invZ * 2.5;
-          if (r > 5) r = 5;
+          if (r > 6) r = 6;
           var tw = Math.sin(t * s.ts + s.tp);
           var depthA = Math.min(invZ * 1.1, 1);
           var al = depthA * (0.35 + 0.65 * tw);
           var col = 'rgba(' + s.c[0] + ',' + s.c[1] + ',' + s.c[2] + ',';
 
-          if (isWarping && r > 0.3) {
+          if (isWarping && eased > 0.01) {
             var dx = sx - cx, dy = sy - cy;
             var dist = Math.sqrt(dx * dx + dy * dy) || 1;
             var nx = dx / dist, ny = dy / dist;
-            var streakLen = r * (5 + warpProgress * 60);
-            var endX = sx + nx * streakLen;
-            var endY = sy + ny * streakLen;
+            var streakLen = (4 + eased * 120) * (r + 0.5);
+            var dir = isReverse ? -1 : 1;
+            var endX = sx + nx * streakLen * dir;
+            var endY = sy + ny * streakLen * dir;
             var sg = ctx.createLinearGradient(endX, endY, sx, sy);
-            sg.addColorStop(0, col + (al * 0.9) + ')');
+            sg.addColorStop(0, col + Math.min(al * (0.8 + eased), 1) + ')');
             sg.addColorStop(1, col + '0)');
-            ctx.save();
             ctx.lineCap = 'round';
             ctx.strokeStyle = sg;
-            ctx.lineWidth = Math.max(r * 0.6, 0.5);
-            ctx.shadowColor = col + (al * 0.3) + ')';
-            ctx.shadowBlur = 6;
+            ctx.lineWidth = Math.max(r * (0.4 + eased * 0.8), 0.4);
             ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(endX, endY);
-            ctx.stroke(); ctx.restore();
+            ctx.stroke();
           }
 
           if (!isWarping) {
@@ -174,83 +178,91 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
               ctx.shadowColor = col + (al * 0.3) + ')';
               ctx.shadowBlur = 4;
             } else { ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; }
-          } else {
-            ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
           }
 
+          ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
           ctx.beginPath();
-          ctx.arc(sx, sy, Math.max(r, 0.2), 0, 6.28);
+          ctx.arc(sx, sy, Math.max(isWarping ? r * (1 - eased * 0.5) : r, 0.15), 0, 6.28);
           ctx.fillStyle = col + al + ')';
           ctx.fill();
         }
 
-        ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+        if (isWarping) {
+          if (isReverse && p < 0.3) flashAlpha = 1 - p / 0.3;
+          else if (!isReverse && p > 0.6) flashAlpha = (p - 0.6) / 0.4;
+        }
+        if (flashAlpha > 0) {
+          var maxDim = Math.max(W, H);
+          var fg = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxDim * 0.5);
+          fg.addColorStop(0, 'rgba(255,252,245,' + flashAlpha * 0.85 + ')');
+          fg.addColorStop(0.2, 'rgba(251,191,36,' + flashAlpha * 0.4 + ')');
+          fg.addColorStop(0.5, 'rgba(245,158,11,' + flashAlpha * 0.1 + ')');
+          fg.addColorStop(1, 'transparent');
+          ctx.fillStyle = fg;
+          ctx.fillRect(0, 0, W, H);
 
-        if (isWarping && warpT >= WARP_DUR) {
-          if (warp === 'forward') triggerFlash(pendingTarget);
-          else if (warp === 'reverse') triggerFlash(pendingTarget);
+          if (!isWarping) {
+            flashAlpha -= 0.12;
+            if (flashAlpha < 0) flashAlpha = 0;
+          }
+        }
+
+        if (isWarping && p >= 1) {
+          warp = 'none';
+          if (pendingHref) {
+            window.location.href = pendingHref;
+            pendingHref = null;
+          } else if (pendingTarget) {
+            switchNav(pendingTarget);
+            pendingTarget = null;
+          }
         }
 
         raf = requestAnimationFrame(draw);
       }
 
-      var pendingTarget = null;
-
-      function startWarp(direction, targetId) {
-        warp = direction;
-        warpT = 0;
-        pendingTarget = targetId;
-        var currentNav = document.getElementById(activeNav);
-        if (currentNav) {
-          currentNav.classList.remove('nav-visible');
-          currentNav.classList.add('nav-fading');
-        }
-      }
-
-      function triggerFlash(targetId) {
-        warp = 'none';
-        flash.classList.add('flash-active');
-        setTimeout(function () {
-          switchNav(targetId);
-          flash.classList.remove('flash-active');
-        }, 250);
+      function hideCurrentNav() {
+        var nav = document.getElementById(activeNav);
+        if (nav) { nav.classList.remove('nav-visible'); nav.classList.add('nav-fading'); }
       }
 
       function switchNav(targetId) {
         document.querySelectorAll('.spiral-nav').forEach(function (n) {
-          n.hidden = true;
-          n.classList.remove('nav-visible', 'nav-fading');
+          n.hidden = true; n.classList.remove('nav-visible', 'nav-fading');
         });
         var target = document.getElementById(targetId);
         if (target) {
-          target.hidden = false;
-          activeNav = targetId;
+          target.hidden = false; activeNav = targetId;
           requestAnimationFrame(function () { target.classList.add('nav-visible'); });
         }
       }
 
+      function startWarp(direction, opts) {
+        warp = direction; warpT = 0; flashAlpha = 0;
+        pendingTarget = opts.navId || null;
+        pendingHref = opts.href || null;
+        hideCurrentNav();
+      }
+
       menu.addEventListener('click', function (e) {
+        if (warp !== 'none') return;
         var trigger = e.target.closest('.constellation-trigger');
-        if (trigger) {
-          e.preventDefault();
-          startWarp('forward', trigger.dataset.target);
-          return;
-        }
+        if (trigger) { e.preventDefault(); startWarp('forward', { navId: trigger.dataset.target }); return; }
         var back = e.target.closest('.spiral-back');
-        if (back) {
-          e.preventDefault();
-          startWarp('reverse', back.dataset.target);
-          return;
-        }
+        if (back) { e.preventDefault(); startWarp('reverse', { navId: back.dataset.target }); return; }
         var link = e.target.closest('a.spiral-item');
-        if (link) close();
+        if (link) {
+          if (link.target === '_blank') return;
+          e.preventDefault();
+          startWarp('forward', { href: link.href });
+        }
       });
 
       function open() {
         menu.hidden = false;
         btn.setAttribute('aria-expanded', 'true');
         document.body.classList.add('spiral-active');
-        resize(); init(); warp = 'none';
+        resize(); init(); warp = 'none'; flashAlpha = 0;
         switchNav('nav-0');
         raf = requestAnimationFrame(draw);
         requestAnimationFrame(function () {
@@ -266,11 +278,11 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
         document.querySelectorAll('.spiral-nav').forEach(function (n) {
           n.classList.remove('nav-visible', 'nav-fading');
         });
-        setTimeout(function () { menu.hidden = true; }, 500);
+        setTimeout(function () { menu.hidden = true; }, 180);
       }
       btn.addEventListener('click', function () { menu.hidden ? open() : close(); });
-      backdrop.addEventListener('click', close);
-      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !menu.hidden) close(); });
+      backdrop.addEventListener('click', function () { if (warp === 'none') close(); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !menu.hidden && warp === 'none') close(); });
       window.addEventListener('resize', function () { if (!menu.hidden) resize(); });
     })();
   </script>
@@ -356,10 +368,10 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
   :global(body.spiral-active) .brand-mark {
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.5s ease-out;
+    transition: opacity 0.15s;
   }
   main, footer, .brand-mark {
-    transition: opacity 0.4s ease-in;
+    transition: opacity 0.15s;
   }
 
   /* ── Spiral menu ───────────────────────────── */
@@ -406,17 +418,7 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
   }
 
   .warp-flash {
-    position: absolute;
-    inset: 0;
-    z-index: 10;
-    background: radial-gradient(circle at center, rgba(255,250,240,0.9) 0%, rgba(251,191,36,0.3) 40%, transparent 70%);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.15s;
-  }
-  .warp-flash.flash-active {
-    opacity: 1;
-    transition: opacity 0.08s;
+    display: none;
   }
 
   .spiral-galaxy {
@@ -424,10 +426,7 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
     inset: 0;
     z-index: 1;
     pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.8s ease-out 0.1s;
   }
-  .spiral-menu.is-open .spiral-galaxy { opacity: 1; }
 
   .spiral-nav {
     position: absolute;
@@ -438,7 +437,7 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
     position: absolute;
     left: var(--sx);
     top: var(--sy);
-    transform: translate(-50%, -50%) scale(0.5);
+    transform: translate(-50%, -50%);
     font-family: 'JetBrains Mono', monospace;
     font-size: 15px;
     font-weight: 500;
@@ -451,22 +450,16 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
     border: none;
     cursor: pointer;
     padding: 8px 4px;
-    transition:
-      opacity 0.6s calc(var(--i) * 0.12s) ease-out,
-      transform 0.8s calc(var(--i) * 0.12s) cubic-bezier(0.16, 1, 0.3, 1),
-      color 0.3s,
-      text-shadow 0.3s;
+    transition: opacity 0.15s, color 0.2s, text-shadow 0.2s;
     text-shadow: 0 0 0 transparent;
   }
   .nav-visible .spiral-item {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
     text-shadow: 0 0 24px rgba(245,158,11,0.15);
   }
   .nav-fading .spiral-item {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.3);
-    transition: opacity 0.3s, transform 0.3s;
+    transition: opacity 0.08s;
   }
   .spiral-item:hover {
     color: var(--gold-300);
