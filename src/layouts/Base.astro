@@ -172,7 +172,7 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
         }
 
         if (isWarping) {
-          var snap = Math.min(p * 8, 1);
+          var snap = Math.min(p * 10, 1);
           var isReverse = warp === 'reverse';
           var lineAlpha = isReverse ? (1 - p) : snap;
 
@@ -186,27 +186,18 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
             var la = h.a * lineAlpha;
             if (la < 0.02) continue;
             var c = h.blue ? '180,200,255' : '240,245,255';
+            ctx.shadowColor = 'rgba(' + c + ',' + (la * 0.6) + ')';
+            ctx.shadowBlur = 3 + h.w * 4;
             ctx.strokeStyle = 'rgba(' + c + ',' + la + ')';
             ctx.lineWidth = h.w * lineAlpha;
             ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
             ctx.stroke();
           }
-        }
-
-        if (isWarping && p > 0.7) {
-          flashAlpha = Math.min((p - 0.7) / 0.3, 1);
-        }
-        if (flashAlpha > 0) {
-          ctx.fillStyle = 'rgba(235,240,255,' + flashAlpha * 0.85 + ')';
-          ctx.fillRect(0, 0, W, H);
-          if (!isWarping) {
-            flashAlpha -= 0.18;
-            if (flashAlpha < 0) flashAlpha = 0;
-          }
+          ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
         }
 
         if (isWarping && p >= 1) {
-          warp = 'none';
+          warp = 'none'; hyperLines = [];
           if (pendingHref) {
             window.location.href = pendingHref;
             pendingHref = null;
