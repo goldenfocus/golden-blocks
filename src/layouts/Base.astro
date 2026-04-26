@@ -38,12 +38,29 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
   <div class="spiral-menu" id="spiral-menu" hidden>
     <div class="spiral-glass" id="spiral-backdrop"></div>
     <canvas class="spiral-galaxy" id="spiral-galaxy"></canvas>
-    <nav class="spiral-items" aria-label="Navigation">
-      <a href="/" class="spiral-item" style="--i:0; --sx:52%; --sy:28%;"><span class="star-dot"></span>Home</a>
-      <a href="/blocks" class="spiral-item" style="--i:1; --sx:68%; --sy:42%;"><span class="star-dot"></span>Blocks</a>
-      <a href="/blocks/golden-voice" class="spiral-item" style="--i:2; --sx:38%; --sy:55%;"><span class="star-dot"></span>golden-voice</a>
-      <a href="https://github.com/goldenfocus/golden-cloud" target="_blank" class="spiral-item" style="--i:3; --sx:62%; --sy:68%;"><span class="star-dot"></span>Golden Cloud</a>
-      <a href="https://github.com/goldenfocus" target="_blank" class="spiral-item" style="--i:4; --sx:30%; --sy:38%;"><span class="star-dot"></span>GitHub</a>
+    <div class="warp-flash" id="warp-flash"></div>
+
+    <!-- Level 0: Main star map -->
+    <nav class="spiral-nav spiral-nav-0" id="nav-0" aria-label="Navigation">
+      <a href="/" class="spiral-item" style="--i:0; --sx:50%; --sy:24%;"><span class="star-dot"></span>Home</a>
+      <button type="button" class="spiral-item constellation-trigger" data-target="nav-blocks" style="--i:1; --sx:72%; --sy:40%;"><span class="star-dot sd-gold"></span>Blocks<span class="constellation-hint">constellation</span></button>
+      <a href="/blocks/golden-voice" class="spiral-item" style="--i:2; --sx:35%; --sy:52%;"><span class="star-dot"></span>golden-voice</a>
+      <a href="https://github.com/goldenfocus/golden-cloud" target="_blank" class="spiral-item" style="--i:3; --sx:60%; --sy:72%;"><span class="star-dot"></span>Golden Cloud</a>
+      <button type="button" class="spiral-item constellation-trigger" data-target="nav-github" style="--i:4; --sx:25%; --sy:36%;"><span class="star-dot sd-silver"></span>GitHub<span class="constellation-hint">constellation</span></button>
+    </nav>
+
+    <!-- Level 1: Blocks constellation -->
+    <nav class="spiral-nav spiral-nav-sub" id="nav-blocks" hidden aria-label="Blocks">
+      <button type="button" class="spiral-item spiral-back" data-target="nav-0" style="--i:0; --sx:15%; --sy:12%;"><span class="star-dot sd-dim"></span>← back</button>
+      <a href="/blocks" class="spiral-item" style="--i:1; --sx:45%; --sy:30%;"><span class="star-dot sd-gold"></span>All Blocks</a>
+      <a href="/blocks/golden-voice" class="spiral-item" style="--i:2; --sx:62%; --sy:50%;"><span class="star-dot sd-gold"></span>golden-voice</a>
+    </nav>
+
+    <!-- Level 1: GitHub constellation -->
+    <nav class="spiral-nav spiral-nav-sub" id="nav-github" hidden aria-label="GitHub">
+      <button type="button" class="spiral-item spiral-back" data-target="nav-0" style="--i:0; --sx:15%; --sy:12%;"><span class="star-dot sd-dim"></span>← back</button>
+      <a href="https://github.com/goldenfocus" target="_blank" class="spiral-item" style="--i:1; --sx:50%; --sy:35%;"><span class="star-dot sd-silver"></span>goldenfocus</a>
+      <a href="https://github.com/goldenfocus/golden-cloud" target="_blank" class="spiral-item" style="--i:2; --sx:65%; --sy:55%;"><span class="star-dot sd-silver"></span>golden-cloud</a>
     </nav>
   </div>
 
@@ -53,20 +70,19 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
       var menu = document.getElementById('spiral-menu');
       var backdrop = document.getElementById('spiral-backdrop');
       var canvas = document.getElementById('spiral-galaxy');
+      var flash = document.getElementById('warp-flash');
       if (!btn || !menu || !canvas) return;
       var ctx = canvas.getContext('2d');
-      var raf = 0;
-      var stars = [];
-      var shooter = null;
-      var shootCooldown = 0;
-      var dpr = window.devicePixelRatio || 1;
-      var W, H;
+      var raf = 0, stars = [], dpr = window.devicePixelRatio || 1;
+      var W, H, t = 0;
+      var warp = 'none';
+      var warpT = 0;
+      var WARP_DUR = 50;
+      var activeNav = 'nav-0';
 
       var WARM = [[251,191,36],[245,158,11],[252,211,77],[217,119,6],[254,243,199]];
       var COOL = [[220,230,255],[200,210,240],[180,195,225],[240,245,255]];
-      var MAX_Z = 6;
-      var FOCAL = 340;
-      var COUNT = 180;
+      var MAX_Z = 6, FOCAL = 340, COUNT = 180;
 
       function resize() {
         W = window.innerWidth; H = window.innerHeight;
@@ -80,51 +96,40 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
         var pal = silver ? COOL : WARM;
         var c = pal[Math.floor(Math.random() * pal.length)];
         return {
-          x: (Math.random() - 0.5) * 2.6,
-          y: (Math.random() - 0.5) * 2.6,
+          x: (Math.random() - 0.5) * 2.6, y: (Math.random() - 0.5) * 2.6,
           z: scatter ? Math.random() * MAX_Z + 0.2 : MAX_Z + Math.random() * 2,
-          c: c,
-          baseR: 0.3 + Math.random() * 1.5,
+          c: c, baseR: 0.3 + Math.random() * 1.5,
           speed: 0.001 + Math.random() * 0.0018,
-          ts: 0.004 + Math.random() * 0.018,
-          tp: Math.random() * 6.28,
-        };
-      }
-
-      function mkShooter() {
-        var fromLeft = Math.random() < 0.5;
-        return {
-          x: fromLeft ? -10 : W + 10,
-          y: Math.random() * H * 0.5 + H * 0.1,
-          vx: (fromLeft ? 1 : -1) * (4 + Math.random() * 4),
-          vy: 0.8 + Math.random() * 1.5,
-          life: 1,
-          decay: 0.008 + Math.random() * 0.006,
-          len: 60 + Math.random() * 100,
-          w: 1 + Math.random() * 1,
+          ts: 0.004 + Math.random() * 0.018, tp: Math.random() * 6.28,
         };
       }
 
       function init() {
-        stars = []; shooter = null; shootCooldown = 300;
+        stars = [];
         for (var i = 0; i < COUNT; i++) stars.push(mkStar(true));
       }
 
-      var t = 0;
       function draw() {
         t++;
         ctx.clearRect(0, 0, W, H);
-        var cx = W * 0.52, cy = H * 0.44;
+        var cx = W * 0.5, cy = H * 0.5;
+        var isWarping = warp === 'forward' || warp === 'reverse';
+        var warpProgress = 0;
+        if (isWarping) {
+          warpT++;
+          warpProgress = Math.min(warpT / WARP_DUR, 1);
+        }
+        var speedMult = isWarping ? 1 + warpProgress * 80 : 1;
 
         for (var i = 0; i < stars.length; i++) {
           var s = stars[i];
-          s.z -= s.speed;
+          s.z -= s.speed * speedMult;
           if (s.z < 0.06) { stars[i] = mkStar(false); continue; }
 
           var invZ = 1 / s.z;
           var sx = cx + s.x * FOCAL * invZ;
           var sy = cy + s.y * FOCAL * invZ;
-          if (sx < -80 || sx > W + 80 || sy < -80 || sy > H + 80) { stars[i] = mkStar(false); continue; }
+          if (sx < -200 || sx > W + 200 || sy < -200 || sy > H + 200) { stars[i] = mkStar(false); continue; }
 
           var r = s.baseR * invZ * 2.5;
           if (r > 5) r = 5;
@@ -133,27 +138,44 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
           var al = depthA * (0.35 + 0.65 * tw);
           var col = 'rgba(' + s.c[0] + ',' + s.c[1] + ',' + s.c[2] + ',';
 
-          if (r < 1.0 && al > 0.5) {
-            ctx.shadowColor = col + (al * 0.4) + ')';
-            ctx.shadowBlur = 6 + tw * 4;
+          if (isWarping && r > 0.3) {
+            var dx = sx - cx, dy = sy - cy;
+            var dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            var nx = dx / dist, ny = dy / dist;
+            var streakLen = r * (5 + warpProgress * 60);
+            var endX = sx + nx * streakLen;
+            var endY = sy + ny * streakLen;
+            var sg = ctx.createLinearGradient(endX, endY, sx, sy);
+            sg.addColorStop(0, col + (al * 0.9) + ')');
+            sg.addColorStop(1, col + '0)');
             ctx.save();
-            ctx.globalAlpha = al * 0.4;
-            ctx.strokeStyle = col + '0.3)';
-            ctx.lineWidth = 0.4;
-            var rl = r * 5;
-            ctx.beginPath();
-            ctx.moveTo(sx - rl, sy); ctx.lineTo(sx + rl, sy);
-            ctx.moveTo(sx, sy - rl); ctx.lineTo(sx, sy + rl);
-            ctx.stroke();
-            ctx.restore();
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = sg;
+            ctx.lineWidth = Math.max(r * 0.6, 0.5);
+            ctx.shadowColor = col + (al * 0.3) + ')';
+            ctx.shadowBlur = 6;
+            ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(endX, endY);
+            ctx.stroke(); ctx.restore();
           }
 
-          if (r > 1.5) {
-            ctx.shadowColor = 'transparent';
-            ctx.shadowBlur = 0;
-          } else if (r > 0.8) {
-            ctx.shadowColor = col + (al * 0.3) + ')';
-            ctx.shadowBlur = 4;
+          if (!isWarping) {
+            if (r < 1.0 && al > 0.5) {
+              ctx.save();
+              ctx.globalAlpha = al * 0.4;
+              ctx.strokeStyle = col + '0.3)';
+              ctx.lineWidth = 0.4;
+              var rl = r * 5;
+              ctx.beginPath();
+              ctx.moveTo(sx - rl, sy); ctx.lineTo(sx + rl, sy);
+              ctx.moveTo(sx, sy - rl); ctx.lineTo(sx, sy + rl);
+              ctx.stroke(); ctx.restore();
+            }
+            if (r > 0.8 && r < 1.5) {
+              ctx.shadowColor = col + (al * 0.3) + ')';
+              ctx.shadowBlur = 4;
+            } else { ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; }
+          } else {
+            ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
           }
 
           ctx.beginPath();
@@ -164,54 +186,90 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
 
         ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
 
-        shootCooldown--;
-        if (!shooter && shootCooldown <= 0 && Math.random() < 0.003) {
-          shooter = mkShooter();
-          shootCooldown = 500 + Math.floor(Math.random() * 400);
-        }
-        if (shooter) {
-          var sh = shooter;
-          sh.x += sh.vx; sh.y += sh.vy; sh.life -= sh.decay;
-          if (sh.life <= 0) { shooter = null; }
-          else {
-            var spd = Math.sqrt(sh.vx * sh.vx + sh.vy * sh.vy);
-            var tailX = sh.x - (sh.vx / spd) * sh.len * sh.life;
-            var tailY = sh.y - (sh.vy / spd) * sh.len * sh.life;
-            var sg = ctx.createLinearGradient(sh.x, sh.y, tailX, tailY);
-            sg.addColorStop(0, 'rgba(255,250,240,' + (sh.life * 0.9) + ')');
-            sg.addColorStop(0.2, 'rgba(251,191,36,' + (sh.life * 0.6) + ')');
-            sg.addColorStop(1, 'rgba(245,158,11,0)');
-            ctx.save();
-            ctx.lineCap = 'round'; ctx.strokeStyle = sg;
-            ctx.lineWidth = sh.w * sh.life;
-            ctx.shadowColor = 'rgba(251,191,36,' + (sh.life * 0.35) + ')';
-            ctx.shadowBlur = 14;
-            ctx.beginPath(); ctx.moveTo(sh.x, sh.y); ctx.lineTo(tailX, tailY);
-            ctx.stroke(); ctx.restore();
-          }
+        if (isWarping && warpT >= WARP_DUR) {
+          if (warp === 'forward') triggerFlash(pendingTarget);
+          else if (warp === 'reverse') triggerFlash(pendingTarget);
         }
 
         raf = requestAnimationFrame(draw);
       }
 
+      var pendingTarget = null;
+
+      function startWarp(direction, targetId) {
+        warp = direction;
+        warpT = 0;
+        pendingTarget = targetId;
+        var currentNav = document.getElementById(activeNav);
+        if (currentNav) {
+          currentNav.classList.remove('nav-visible');
+          currentNav.classList.add('nav-fading');
+        }
+      }
+
+      function triggerFlash(targetId) {
+        warp = 'none';
+        flash.classList.add('flash-active');
+        setTimeout(function () {
+          switchNav(targetId);
+          flash.classList.remove('flash-active');
+        }, 250);
+      }
+
+      function switchNav(targetId) {
+        document.querySelectorAll('.spiral-nav').forEach(function (n) {
+          n.hidden = true;
+          n.classList.remove('nav-visible', 'nav-fading');
+        });
+        var target = document.getElementById(targetId);
+        if (target) {
+          target.hidden = false;
+          activeNav = targetId;
+          requestAnimationFrame(function () { target.classList.add('nav-visible'); });
+        }
+      }
+
+      menu.addEventListener('click', function (e) {
+        var trigger = e.target.closest('.constellation-trigger');
+        if (trigger) {
+          e.preventDefault();
+          startWarp('forward', trigger.dataset.target);
+          return;
+        }
+        var back = e.target.closest('.spiral-back');
+        if (back) {
+          e.preventDefault();
+          startWarp('reverse', back.dataset.target);
+          return;
+        }
+        var link = e.target.closest('a.spiral-item');
+        if (link) close();
+      });
+
       function open() {
         menu.hidden = false;
         btn.setAttribute('aria-expanded', 'true');
         document.body.classList.add('spiral-active');
-        resize(); init();
+        resize(); init(); warp = 'none';
+        switchNav('nav-0');
         raf = requestAnimationFrame(draw);
-        requestAnimationFrame(function () { menu.classList.add('is-open'); });
+        requestAnimationFrame(function () {
+          menu.classList.add('is-open');
+          document.getElementById('nav-0').classList.add('nav-visible');
+        });
       }
       function close() {
         menu.classList.remove('is-open');
         btn.setAttribute('aria-expanded', 'false');
         document.body.classList.remove('spiral-active');
         cancelAnimationFrame(raf);
+        document.querySelectorAll('.spiral-nav').forEach(function (n) {
+          n.classList.remove('nav-visible', 'nav-fading');
+        });
         setTimeout(function () { menu.hidden = true; }, 500);
       }
       btn.addEventListener('click', function () { menu.hidden ? open() : close(); });
       backdrop.addEventListener('click', close);
-      menu.querySelectorAll('a').forEach(function (a) { a.addEventListener('click', close); });
       document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !menu.hidden) close(); });
       window.addEventListener('resize', function () { if (!menu.hidden) resize(); });
     })();
@@ -347,6 +405,20 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
     inset: 0;
   }
 
+  .warp-flash {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    background: radial-gradient(circle at center, rgba(255,250,240,0.9) 0%, rgba(251,191,36,0.3) 40%, transparent 70%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+  }
+  .warp-flash.flash-active {
+    opacity: 1;
+    transition: opacity 0.08s;
+  }
+
   .spiral-galaxy {
     position: absolute;
     inset: 0;
@@ -357,7 +429,7 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
   }
   .spiral-menu.is-open .spiral-galaxy { opacity: 1; }
 
-  .spiral-items {
+  .spiral-nav {
     position: absolute;
     inset: 0;
     z-index: 2;
@@ -375,6 +447,10 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
     white-space: nowrap;
     text-transform: lowercase;
     opacity: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px 4px;
     transition:
       opacity 0.6s calc(var(--i) * 0.12s) ease-out,
       transform 0.8s calc(var(--i) * 0.12s) cubic-bezier(0.16, 1, 0.3, 1),
@@ -382,10 +458,15 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
       text-shadow 0.3s;
     text-shadow: 0 0 0 transparent;
   }
-  .spiral-menu.is-open .spiral-item {
+  .nav-visible .spiral-item {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
     text-shadow: 0 0 24px rgba(245,158,11,0.15);
+  }
+  .nav-fading .spiral-item {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.3);
+    transition: opacity 0.3s, transform 0.3s;
   }
   .spiral-item:hover {
     color: var(--gold-300);
@@ -395,6 +476,15 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
     background: var(--gold-400);
     box-shadow: 0 0 10px var(--gold-400), 0 0 30px rgba(251,191,36,0.5);
     width: 8px; height: 8px;
+  }
+
+  .constellation-hint {
+    display: block;
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: rgba(245,245,247,0.2);
+    margin-top: 2px;
+    margin-left: 18px;
   }
 
   .star-dot {
@@ -408,6 +498,24 @@ const { title, description = 'Fixing the world piece by piece. Free tools, open 
     box-shadow: 0 0 6px rgba(245,245,247,0.3), 0 0 16px rgba(251,191,36,0.15);
     transition: all 0.3s;
   }
+  .sd-gold {
+    background: var(--gold-400);
+    box-shadow: 0 0 6px var(--gold-500), 0 0 16px rgba(251,191,36,0.3);
+  }
+  .sd-silver {
+    background: rgba(200,210,240,0.7);
+    box-shadow: 0 0 6px rgba(200,210,240,0.4), 0 0 16px rgba(180,195,225,0.2);
+  }
+  .sd-dim {
+    background: rgba(245,245,247,0.3);
+    box-shadow: none;
+  }
+  .spiral-back {
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: rgba(245,245,247,0.35);
+  }
+  .spiral-back:hover { color: rgba(245,245,247,0.7); }
 
   /* ── Footer ────────────────────────────────── */
   footer {
