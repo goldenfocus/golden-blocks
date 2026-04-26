@@ -1,0 +1,432 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="GoldenFocus — Fixing the world piece by piece">
+  <!-- Splash -->
+  <div id="gf-splash" class="splash" aria-hidden="true">
+    <div class="splash-stage">
+      <div class="splash-glow"></div>
+      <h1 class="splash-title gold-text">GoldenFocus</h1>
+      <div class="splash-line"></div>
+      <p class="splash-tag mono">fixing the world · piece by piece</p>
+    </div>
+  </div>
+
+  <script is:inline>
+    (function () {
+      var s = document.getElementById('gf-splash');
+      if (!s) return;
+      var k = 'gf_splash_v2';
+      var seen = false;
+      try { seen = sessionStorage.getItem(k) === '1'; } catch (e) {}
+      if (seen || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        s.style.display = 'none'; return;
+      }
+      try { sessionStorage.setItem(k, '1'); } catch (e) {}
+      document.documentElement.style.overflow = 'hidden';
+      function dismiss() {
+        s.classList.add('out');
+        document.documentElement.style.overflow = '';
+        setTimeout(function () { s.remove(); }, 600);
+      }
+      setTimeout(dismiss, 2600);
+      s.addEventListener('click', dismiss, { once: true });
+    })();
+  </script>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-fade-bottom"></div>
+    <div class="container hero-inner">
+      <div class="kicker">
+        <span class="kicker-rule"></span>
+        <span class="kicker-text mono">open source · free forever</span>
+      </div>
+      <h1 class="display">
+        Tools that <span class="gold-text">fix</span> things.
+      </h1>
+      <p class="lede">
+        We hit a wall — cost, complexity, vendor lock. So we built the fix and
+        open-sourced it. Each block does one thing, runs anywhere, costs nothing.
+      </p>
+      <!-- Single action: scroll down -->
+      <div class="scroll-hint">
+        <div class="scroll-line"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- First release -->
+  <section class="release">
+    <div class="container">
+      <div class="kicker">
+        <span class="kicker-rule"></span>
+        <span class="kicker-text mono">/01 — first release</span>
+      </div>
+
+      <div class="release-card">
+        <div class="release-gold-top"></div>
+        <div class="release-header">
+          <h2>golden-voice</h2>
+          <span class="release-ver mono">v0.1.0</span>
+        </div>
+        <p class="release-headline">Clone your voice. Speak anything. Pay nothing.</p>
+        <p class="release-desc">
+          Record 30 seconds of yourself talking. golden-voice clones your voice
+          locally using XTTS v2. No cloud, no API keys, no monthly bill. One command
+          and you're cloned.
+        </p>
+        <div class="release-code">
+          <pre><code><span class="c-dim"># one-time setup</span>
+golden-voice setup my-voice.wav
+
+<span class="c-dim"># speak in your own voice</span>
+golden-voice speak "Ship it."
+
+<span class="c-dim"># pipe anything</span>
+cat summary.md | golden-voice speak --stdin</code></pre>
+        </div>
+        <div class="release-meta mono">
+          <span>python</span>
+          <span class="meta-sep">·</span>
+          <span>macOS</span>
+          <span class="meta-sep">·</span>
+          <span>XTTS v2</span>
+          <span class="meta-sep">·</span>
+          <span>MIT</span>
+        </div>
+        <a href="/blocks/golden-voice" class="release-link">
+          Full details + install guide <span class="gold-text">→</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Origin -->
+  <section class="origin">
+    <div class="container">
+      <div class="kicker">
+        <span class="kicker-rule"></span>
+        <span class="kicker-text mono">/02 — the origin</span>
+      </div>
+      <h2 class="section-title">Why golden-voice exists</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num mono">01</div>
+          <div class="step-gold-bar"></div>
+          <h3>The problem</h3>
+          <p>10+ AI sessions in parallel. Each one calling ElevenLabs. $100/month, quota burned in days, tabs speaking over each other.</p>
+        </div>
+        <div class="step">
+          <div class="step-num mono">02</div>
+          <div class="step-gold-bar"></div>
+          <h3>The afternoon</h3>
+          <p>macOS say + sox for instant recaps. XTTS v2 for voice cloning. Five rounds of dependency fixes. By evening, it worked.</p>
+        </div>
+        <div class="step">
+          <div class="step-num mono">03</div>
+          <div class="step-gold-bar"></div>
+          <h3>The block</h3>
+          <p>Wrapped the pain — transformers pinning, torch patches, codec installs — so nobody else has to fight it. <code>bash install.sh</code> and you're cloned.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Philosophy -->
+  <section class="philosophy">
+    <div class="container">
+      <div class="kicker">
+        <span class="kicker-rule"></span>
+        <span class="kicker-text mono">/03 — the philosophy</span>
+      </div>
+      <div class="phil-grid">
+        <div class="phil">
+          <div class="phil-gold-edge"></div>
+          <h3>Built from scars</h3>
+          <p>Every block exists because we got burned. Then we fixed it for everyone.</p>
+        </div>
+        <div class="phil">
+          <div class="phil-gold-edge"></div>
+          <h3>Free as in free</h3>
+          <p>No freemium. No "contact sales." Open source, stays that way.</p>
+        </div>
+        <div class="phil">
+          <div class="phil-gold-edge"></div>
+          <h3>Blocks, not monoliths</h3>
+          <p>One thing, done well, clean interface, runs anywhere.</p>
+        </div>
+        <div class="phil">
+          <div class="phil-gold-edge"></div>
+          <h3>Tikkun olam</h3>
+          <p>Repair the world piece by piece. Not by preaching — by shipping.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .mono { font-family: 'JetBrains Mono', 'SF Mono', monospace; }
+
+  /* ── Splash ─────────────────────────────────── */
+  .splash {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: radial-gradient(ellipse at center, #1a1510 0%, #0a0a0f 60%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: splash-in 0.5s ease-out;
+  }
+  .splash.out { animation: splash-out 0.55s ease-in forwards; }
+  .splash-stage { text-align: center; position: relative; }
+  .splash-glow {
+    position: absolute;
+    width: 400px; height: 400px;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, rgba(217,119,6,0.12) 0%, transparent 70%);
+    animation: glow-pulse 2.5s ease-in-out infinite;
+  }
+  .splash-title {
+    font-size: clamp(42px, 10vw, 64px);
+    font-weight: 800;
+    letter-spacing: -2px;
+    position: relative;
+  }
+  .splash-line {
+    width: 48px; height: 1px;
+    margin: 16px auto 12px;
+    background: linear-gradient(90deg, transparent, var(--gold-500), transparent);
+  }
+  .splash-tag {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+  @keyframes splash-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes splash-out { to { opacity: 0; pointer-events: none; } }
+  @keyframes glow-pulse { 0%,100% { opacity: 0.4; transform: translate(-50%,-50%) scale(1); } 50% { opacity: 1; transform: translate(-50%,-50%) scale(1.1); } }
+
+  /* ── Hero ───────────────────────────────────── */
+  .hero {
+    position: relative;
+    padding: 0;
+    overflow: hidden;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+  }
+  .hero-fade-bottom {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(to bottom, transparent 0%, var(--ink-900) 100%);
+    z-index: 1;
+  }
+  /* Text positioned in the safe zone (left 5-30%, top 20-75%) */
+  .hero-inner {
+    position: relative;
+    z-index: 2;
+    padding-top: 20vh;
+    padding-bottom: 10vh;
+    max-width: 480px;
+    text-shadow: 0 2px 24px rgba(0,0,0,0.9), 0 0 60px rgba(0,0,0,0.6);
+  }
+
+  .kicker {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .kicker-rule {
+    width: 36px; height: 1px;
+    background: var(--gold-600);
+  }
+  .kicker-text {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .display {
+    font-size: clamp(38px, 6vw, 60px);
+    font-weight: 800;
+    letter-spacing: -2px;
+    line-height: 1.05;
+    max-width: 620px;
+  }
+  .lede {
+    margin-top: 24px;
+    font-size: 17px;
+    color: var(--text-primary);
+    max-width: 520px;
+    line-height: 1.75;
+    font-weight: 400;
+  }
+
+  .scroll-hint {
+    margin-top: 48px;
+  }
+  .scroll-line {
+    width: 1px;
+    height: 48px;
+    background: linear-gradient(to bottom, var(--gold-600), transparent);
+    animation: scroll-pulse 2s ease-in-out infinite;
+  }
+  @keyframes scroll-pulse {
+    0%, 100% { opacity: 0.3; height: 48px; }
+    50% { opacity: 0.8; height: 64px; }
+  }
+
+  /* ── Release ────────────────────────────────── */
+  .release { padding: 80px 0; }
+  .release-card {
+    position: relative;
+    padding: 36px;
+    background: var(--ink-800);
+    border: 1px solid var(--ink-600);
+  }
+  .release-gold-top {
+    position: absolute;
+    top: -1px; left: 20%; right: 20%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-500), transparent);
+  }
+  .release-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+  .release-header h2 {
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -1px;
+  }
+  .release-ver {
+    font-size: 11px;
+    color: var(--gold-500);
+    letter-spacing: 1px;
+  }
+  .release-headline {
+    margin-top: 6px;
+    font-size: 16px;
+    color: var(--gold-400);
+    font-weight: 400;
+  }
+  .release-desc {
+    margin-top: 16px;
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.75;
+    max-width: 600px;
+  }
+  .release-code {
+    margin-top: 20px;
+  }
+  .release-code pre {
+    border: 1px solid var(--ink-600);
+    background: var(--ink-900);
+  }
+  .c-dim { color: var(--text-muted); }
+  .release-meta {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+  }
+  .meta-sep { color: var(--ink-500); }
+  .release-link {
+    display: inline-block;
+    margin-top: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: color 0.2s;
+  }
+  .release-link:hover { color: var(--gold-400); }
+
+  /* ── Origin ─────────────────────────────────── */
+  .origin { padding: 60px 0; }
+  .section-title {
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 36px;
+  }
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1px;
+    background: var(--ink-600);
+  }
+  .step {
+    padding: 28px;
+    background: var(--ink-800);
+    position: relative;
+  }
+  .step-num {
+    font-size: 11px;
+    color: var(--gold-500);
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+  .step-gold-bar {
+    width: 24px; height: 2px;
+    background: var(--gold-600);
+    margin-bottom: 14px;
+  }
+  .step h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .step p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  /* ── Philosophy ─────────────────────────────── */
+  .philosophy { padding: 60px 0; }
+  .phil-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0;
+  }
+  .phil {
+    padding: 28px 24px;
+    border-top: 1px solid var(--ink-600);
+    position: relative;
+  }
+  .phil-gold-edge {
+    position: absolute;
+    top: -1px; left: 0;
+    width: 32px; height: 2px;
+    background: var(--gold-600);
+  }
+  .phil h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .phil p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  @media (max-width: 640px) {
+    .hero { padding: 100px 0 60px; }
+    .steps { grid-template-columns: 1fr; }
+  }
+</style>

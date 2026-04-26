@@ -1,0 +1,436 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+}
+const { title, description = 'Fixing the world piece by piece. Free tools, open source, built to share.' } = Astro.props;
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content={description}>
+  <meta property="og:title" content={title}>
+  <meta property="og:description" content={description}>
+  <meta property="og:type" content="website">
+  <meta property="og:url" content={Astro.url.href}>
+  <title>{title}</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="site-bg"></div>
+  <div class="site-bg site-bg-2"></div>
+
+  <!-- Spiral nav trigger — top right -->
+  <div class="spiral-trigger" id="spiral-trigger">
+    <button type="button" class="spiral-btn" id="spiral-btn" aria-label="Menu" aria-expanded="false">
+      <svg class="spiral-icon" viewBox="0 0 32 32" fill="none">
+        <path d="M16 4 C22 4 28 10 28 16 C28 22 22 28 16 28 C12 28 8 24 8 20 C8 16 12 12 16 12 C18 12 20 14 20 16 C20 18 18 20 16 20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Spiral menu overlay -->
+  <div class="spiral-menu" id="spiral-menu" hidden>
+    <div class="spiral-glass" id="spiral-backdrop"></div>
+    <canvas class="spiral-galaxy" id="spiral-galaxy"></canvas>
+    <nav class="spiral-items" aria-label="Navigation">
+      <a href="/" class="spiral-item" style="--i:0; --sx:52%; --sy:28%;"><span class="star-dot"></span>Home</a>
+      <a href="/blocks" class="spiral-item" style="--i:1; --sx:68%; --sy:42%;"><span class="star-dot"></span>Blocks</a>
+      <a href="/blocks/golden-voice" class="spiral-item" style="--i:2; --sx:38%; --sy:55%;"><span class="star-dot"></span>golden-voice</a>
+      <a href="https://github.com/goldenfocus/golden-cloud" target="_blank" class="spiral-item" style="--i:3; --sx:62%; --sy:68%;"><span class="star-dot"></span>Golden Cloud</a>
+      <a href="https://github.com/goldenfocus" target="_blank" class="spiral-item" style="--i:4; --sx:30%; --sy:38%;"><span class="star-dot"></span>GitHub</a>
+    </nav>
+  </div>
+
+  <script is:inline>
+    (function () {
+      var btn = document.getElementById('spiral-btn');
+      var menu = document.getElementById('spiral-menu');
+      var backdrop = document.getElementById('spiral-backdrop');
+      var canvas = document.getElementById('spiral-galaxy');
+      if (!btn || !menu || !canvas) return;
+      var ctx = canvas.getContext('2d');
+      var raf = 0;
+      var stars = [];
+      var shooter = null;
+      var shootCooldown = 0;
+      var dpr = window.devicePixelRatio || 1;
+      var W, H;
+
+      var WARM = [[251,191,36],[245,158,11],[252,211,77],[217,119,6],[254,243,199]];
+      var COOL = [[220,230,255],[200,210,240],[180,195,225],[240,245,255]];
+      var MAX_Z = 6;
+      var FOCAL = 340;
+      var COUNT = 180;
+
+      function resize() {
+        W = window.innerWidth; H = window.innerHeight;
+        canvas.width = W * dpr; canvas.height = H * dpr;
+        canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      function mkStar(scatter) {
+        var silver = Math.random() < 0.3;
+        var pal = silver ? COOL : WARM;
+        var c = pal[Math.floor(Math.random() * pal.length)];
+        return {
+          x: (Math.random() - 0.5) * 2.6,
+          y: (Math.random() - 0.5) * 2.6,
+          z: scatter ? Math.random() * MAX_Z + 0.2 : MAX_Z + Math.random() * 2,
+          c: c,
+          baseR: 0.3 + Math.random() * 1.5,
+          speed: 0.001 + Math.random() * 0.0018,
+          ts: 0.004 + Math.random() * 0.018,
+          tp: Math.random() * 6.28,
+        };
+      }
+
+      function mkShooter() {
+        var fromLeft = Math.random() < 0.5;
+        return {
+          x: fromLeft ? -10 : W + 10,
+          y: Math.random() * H * 0.5 + H * 0.1,
+          vx: (fromLeft ? 1 : -1) * (4 + Math.random() * 4),
+          vy: 0.8 + Math.random() * 1.5,
+          life: 1,
+          decay: 0.008 + Math.random() * 0.006,
+          len: 60 + Math.random() * 100,
+          w: 1 + Math.random() * 1,
+        };
+      }
+
+      function init() {
+        stars = []; shooter = null; shootCooldown = 300;
+        for (var i = 0; i < COUNT; i++) stars.push(mkStar(true));
+      }
+
+      var t = 0;
+      function draw() {
+        t++;
+        ctx.clearRect(0, 0, W, H);
+        var cx = W * 0.52, cy = H * 0.44;
+
+        for (var i = 0; i < stars.length; i++) {
+          var s = stars[i];
+          s.z -= s.speed;
+          if (s.z < 0.06) { stars[i] = mkStar(false); continue; }
+
+          var invZ = 1 / s.z;
+          var sx = cx + s.x * FOCAL * invZ;
+          var sy = cy + s.y * FOCAL * invZ;
+          if (sx < -80 || sx > W + 80 || sy < -80 || sy > H + 80) { stars[i] = mkStar(false); continue; }
+
+          var r = s.baseR * invZ * 2.5;
+          if (r > 5) r = 5;
+          var tw = Math.sin(t * s.ts + s.tp);
+          var depthA = Math.min(invZ * 1.1, 1);
+          var al = depthA * (0.35 + 0.65 * tw);
+          var col = 'rgba(' + s.c[0] + ',' + s.c[1] + ',' + s.c[2] + ',';
+
+          if (r < 1.0 && al > 0.5) {
+            ctx.shadowColor = col + (al * 0.4) + ')';
+            ctx.shadowBlur = 6 + tw * 4;
+            ctx.save();
+            ctx.globalAlpha = al * 0.4;
+            ctx.strokeStyle = col + '0.3)';
+            ctx.lineWidth = 0.4;
+            var rl = r * 5;
+            ctx.beginPath();
+            ctx.moveTo(sx - rl, sy); ctx.lineTo(sx + rl, sy);
+            ctx.moveTo(sx, sy - rl); ctx.lineTo(sx, sy + rl);
+            ctx.stroke();
+            ctx.restore();
+          }
+
+          if (r > 1.5) {
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+          } else if (r > 0.8) {
+            ctx.shadowColor = col + (al * 0.3) + ')';
+            ctx.shadowBlur = 4;
+          }
+
+          ctx.beginPath();
+          ctx.arc(sx, sy, Math.max(r, 0.2), 0, 6.28);
+          ctx.fillStyle = col + al + ')';
+          ctx.fill();
+        }
+
+        ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+
+        shootCooldown--;
+        if (!shooter && shootCooldown <= 0 && Math.random() < 0.003) {
+          shooter = mkShooter();
+          shootCooldown = 500 + Math.floor(Math.random() * 400);
+        }
+        if (shooter) {
+          var sh = shooter;
+          sh.x += sh.vx; sh.y += sh.vy; sh.life -= sh.decay;
+          if (sh.life <= 0) { shooter = null; }
+          else {
+            var spd = Math.sqrt(sh.vx * sh.vx + sh.vy * sh.vy);
+            var tailX = sh.x - (sh.vx / spd) * sh.len * sh.life;
+            var tailY = sh.y - (sh.vy / spd) * sh.len * sh.life;
+            var sg = ctx.createLinearGradient(sh.x, sh.y, tailX, tailY);
+            sg.addColorStop(0, 'rgba(255,250,240,' + (sh.life * 0.9) + ')');
+            sg.addColorStop(0.2, 'rgba(251,191,36,' + (sh.life * 0.6) + ')');
+            sg.addColorStop(1, 'rgba(245,158,11,0)');
+            ctx.save();
+            ctx.lineCap = 'round'; ctx.strokeStyle = sg;
+            ctx.lineWidth = sh.w * sh.life;
+            ctx.shadowColor = 'rgba(251,191,36,' + (sh.life * 0.35) + ')';
+            ctx.shadowBlur = 14;
+            ctx.beginPath(); ctx.moveTo(sh.x, sh.y); ctx.lineTo(tailX, tailY);
+            ctx.stroke(); ctx.restore();
+          }
+        }
+
+        raf = requestAnimationFrame(draw);
+      }
+
+      function open() {
+        menu.hidden = false;
+        btn.setAttribute('aria-expanded', 'true');
+        document.body.classList.add('spiral-active');
+        resize(); init();
+        raf = requestAnimationFrame(draw);
+        requestAnimationFrame(function () { menu.classList.add('is-open'); });
+      }
+      function close() {
+        menu.classList.remove('is-open');
+        btn.setAttribute('aria-expanded', 'false');
+        document.body.classList.remove('spiral-active');
+        cancelAnimationFrame(raf);
+        setTimeout(function () { menu.hidden = true; }, 500);
+      }
+      btn.addEventListener('click', function () { menu.hidden ? open() : close(); });
+      backdrop.addEventListener('click', close);
+      menu.querySelectorAll('a').forEach(function (a) { a.addEventListener('click', close); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !menu.hidden) close(); });
+      window.addEventListener('resize', function () { if (!menu.hidden) resize(); });
+    })();
+  </script>
+
+  <!-- Minimal brand mark — bottom left, barely there -->
+  <a href="/" class="brand-mark">
+    <span class="gold-text">GF</span>
+  </a>
+
+  <main>
+    <slot />
+  </main>
+
+  <footer>
+    <div class="container footer-inner">
+      <div class="footer-gold-line"></div>
+      <p class="gold-text footer-brand">GoldenFocus</p>
+      <p class="footer-tagline">fixing the world piece by piece</p>
+    </div>
+  </footer>
+</body>
+</html>
+
+<style is:global>
+  @import '../styles/global.css';
+</style>
+
+<style>
+  /* ── Spiral trigger ────────────────────────── */
+  .spiral-trigger {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 100;
+  }
+  .spiral-btn {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: color 0.4s, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .spiral-btn:hover,
+  .spiral-btn[aria-expanded="true"] {
+    color: var(--gold-400);
+    transform: rotate(180deg);
+    filter: drop-shadow(0 0 6px rgba(251,191,36,0.3));
+  }
+  .spiral-btn:focus-visible {
+    outline: none;
+  }
+  .spiral-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  /* ── Brand mark ────────────────────────────── */
+  .brand-mark {
+    position: fixed;
+    top: 28px;
+    left: 28px;
+    z-index: 100;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    opacity: 0.3;
+    transition: opacity 0.3s;
+  }
+  .brand-mark:hover { opacity: 1; }
+
+  /* ── Body fade when menu is active ─────────── */
+  :global(body.spiral-active) {
+    overflow: hidden;
+  }
+  :global(body.spiral-active) main,
+  :global(body.spiral-active) footer,
+  :global(body.spiral-active) .brand-mark {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease-out;
+  }
+  main, footer, .brand-mark {
+    transition: opacity 0.4s ease-in;
+  }
+
+  /* ── Spiral menu ───────────────────────────── */
+  .spiral-menu {
+    position: fixed;
+    inset: 0;
+    z-index: 99;
+  }
+
+  .site-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: url('/hero.png') center 40% / cover no-repeat;
+    background-color: var(--ink-900);
+    transform-origin: 28% 45%;
+    animation: drift-into-sun 3600s linear forwards;
+  }
+  .site-bg-2 {
+    background:
+      radial-gradient(ellipse at 65% 40%, rgba(90,60,160,0.4) 0%, transparent 50%),
+      radial-gradient(ellipse at 30% 60%, rgba(40,80,180,0.3) 0%, transparent 45%),
+      radial-gradient(ellipse at 50% 30%, rgba(120,80,200,0.15) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 70%, rgba(60,40,120,0.25) 0%, transparent 40%),
+      var(--ink-900);
+    transform-origin: 60% 45%;
+    opacity: 0;
+    animation:
+      galaxy-2-in 3600s 1800s linear forwards,
+      drift-into-sun 3600s 1800s linear forwards;
+  }
+  @keyframes drift-into-sun {
+    from { transform: scale(1); }
+    to { transform: scale(3); }
+  }
+  @keyframes galaxy-2-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .spiral-glass {
+    position: absolute;
+    inset: 0;
+  }
+
+  .spiral-galaxy {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.8s ease-out 0.1s;
+  }
+  .spiral-menu.is-open .spiral-galaxy { opacity: 1; }
+
+  .spiral-items {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+  }
+  .spiral-item {
+    position: absolute;
+    left: var(--sx);
+    top: var(--sy);
+    transform: translate(-50%, -50%) scale(0.5);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    color: rgba(245,245,247,0.55);
+    white-space: nowrap;
+    text-transform: lowercase;
+    opacity: 0;
+    transition:
+      opacity 0.6s calc(var(--i) * 0.12s) ease-out,
+      transform 0.8s calc(var(--i) * 0.12s) cubic-bezier(0.16, 1, 0.3, 1),
+      color 0.3s,
+      text-shadow 0.3s;
+    text-shadow: 0 0 0 transparent;
+  }
+  .spiral-menu.is-open .spiral-item {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    text-shadow: 0 0 24px rgba(245,158,11,0.15);
+  }
+  .spiral-item:hover {
+    color: var(--gold-300);
+    text-shadow: 0 0 30px rgba(251,191,36,0.5), 0 0 80px rgba(245,158,11,0.2);
+  }
+  .spiral-item:hover .star-dot {
+    background: var(--gold-400);
+    box-shadow: 0 0 10px var(--gold-400), 0 0 30px rgba(251,191,36,0.5);
+    width: 8px; height: 8px;
+  }
+
+  .star-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(245,245,247,0.6);
+    margin-right: 12px;
+    vertical-align: middle;
+    box-shadow: 0 0 6px rgba(245,245,247,0.3), 0 0 16px rgba(251,191,36,0.15);
+    transition: all 0.3s;
+  }
+
+  /* ── Footer ────────────────────────────────── */
+  footer {
+    margin-top: 100px;
+    padding: 40px 0 32px;
+    text-align: center;
+  }
+  .footer-inner { position: relative; }
+  .footer-gold-line {
+    width: 60px;
+    height: 1px;
+    margin: 0 auto 20px;
+    background: linear-gradient(90deg, transparent, var(--gold-500), transparent);
+  }
+  .footer-brand {
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .footer-tagline {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 1px;
+  }
+</style>

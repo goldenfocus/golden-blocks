@@ -1,0 +1,82 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const blocks = [
+  {
+    slug: 'golden-voice',
+    icon: '🎙️',
+    name: 'golden-voice',
+    summary: 'Clone your voice locally and use it for TTS — free forever, no API keys.',
+    tags: 'voice · tts · python · free',
+    status: 'v0.1.0',
+  },
+];
+---
+<Base title="Blocks — GoldenFocus" description="Free, open source tools. Each one solves a real problem.">
+  <section class="blocks-page">
+    <div class="container">
+      <h1>Blocks</h1>
+      <p class="page-subtitle">Each block does one thing well. Free, tested, ready to use.</p>
+
+      <div class="block-grid">
+        {blocks.map(b => (
+          <a href={`/blocks/${b.slug}`} class="block-card">
+            <div class="block-card-icon">{b.icon}</div>
+            <div class="block-card-body">
+              <div class="block-card-header">
+                <h3>{b.name}</h3>
+                <span class="block-version">{b.status}</span>
+              </div>
+              <p>{b.summary}</p>
+              <span class="block-card-tag">{b.tags}</span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .blocks-page { padding: 60px 0; }
+  .blocks-page h1 { font-size: 36px; font-weight: 800; letter-spacing: -1px; }
+  .page-subtitle { color: var(--text-secondary); font-size: 16px; margin-top: 8px; margin-bottom: 40px; }
+
+  .block-grid { display: flex; flex-direction: column; gap: 16px; }
+
+  .block-card {
+    display: flex;
+    gap: 20px;
+    padding: 24px;
+    background: var(--ink-800);
+    border: 1px solid var(--ink-600);
+    border-radius: 12px;
+    transition: border-color 0.2s, transform 0.15s;
+    color: var(--text-primary);
+  }
+  .block-card:hover {
+    border-color: var(--gold-500);
+    transform: translateY(-2px);
+    color: var(--text-primary);
+  }
+  .block-card-icon { font-size: 36px; flex-shrink: 0; padding-top: 2px; }
+  .block-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .block-card-body h3 { font-size: 18px; font-weight: 600; }
+  .block-card-body p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+  .block-version {
+    font-size: 11px;
+    color: var(--gold-400);
+    border: 1px solid rgba(251, 191, 36, 0.2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+  .block-card-tag {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+</style>

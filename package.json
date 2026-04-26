@@ -1,18 +1,23 @@
 {
-  "name": "golden-blocks",
-  "version": "1.0.0",
-  "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
-  "scripts": {
-    "dev:auth-block": "bun run --filter auth-block",
-    "dev:auth-demo": "bun run --filter auth-demo",
-    "build": "bun run --filter '*' build",
-    "test": "bun run --filter '*' test"
+  "name": "beneficial-belt",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
   },
-  "devDependencies": {
-    "typescript": "^5.3.3"
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "generate-types": "wrangler types"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^13.2.1",
+    "astro": "^6.1.9",
+    "wrangler": "^4.85.0"
+  },
+  "overrides": {
+    "vite": "^7"
   }
 }

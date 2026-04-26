@@ -1,0 +1,14 @@
+{
+	"compatibility_date": "2026-04-25",
+	"name": "beneficial-belt",
+	"routes": [
+		{ "pattern": "goldenfocus.io/*", "zone_name": "goldenfocus.io" },
+		{ "pattern": "www.goldenfocus.io/*", "zone_name": "goldenfocus.io" }
+	],
+	"assets": {
+		"directory": "./dist"
+	},
+	"observability": {
+		"enabled": true
+	}
+}
