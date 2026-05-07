@@ -1,0 +1,40 @@
+{
+  "slug": "golden-pm",
+  "name": "golden-pm",
+  "version": "1.0.0",
+  "icon": "📋",
+  "subtitle": "Good PM writes it down, bad PM blames",
+  "summary": "Good PM writes it down, bad PM blames. Auto-injects product accountability on every prompt.",
+  "tags": [
+    "productivity",
+    "product-management",
+    "accountability",
+    "claude-code"
+  ],
+  "kind": "claude-plugin",
+  "license": "MIT",
+  "platform": "any",
+  "hasCustomPage": false,
+  "releasedAt": "2026-05-07",
+  "github": "https://github.com/goldenfocus/golden-cloud/tree/main/blocks/golden-pm",
+  "components": {
+    "skills": [
+      "golden-pm"
+    ],
+    "hooks": [
+      "UserPromptSubmit → detect-pm-prompt.sh"
+    ],
+    "agents": [
+      "pm-accountability"
+    ]
+  },
+  "content": {
+    "what": "Three layers of PM automation:\n\n1. **Hook** — detects product-shaped prompts (\"we should add...\", \"users are complaining...\", \"prioritize the MVP...\") and injects PM framing. Code/git/debug prompts pass through clean.\n2. **Skill** — `/golden-pm` structures any idea into a PM accountability doc with Problem, Success Criteria, Scope, Dependencies, Analytics, Test Plan, and Owner.\n3. **Agent** — `pm-accountability` spawns for large initiatives, researches existing plans and codebase before writing comprehensive PRDs.",
+    "how": [
+      "**Product language** (feature requests, user pain, strategy, incidents) → injects PM framing",
+      "**Code language** (fix, debug, git, refactor) → passes through silently",
+      "**Short prompts** (<10 chars) → skipped"
+    ],
+    "install": "~/golden-cloud/blocks/golden-pm/install.sh\n# restart Claude Code"
+  }
+}

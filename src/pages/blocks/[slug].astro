@@ -1,0 +1,203 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const allBlocks = await getCollection('blocks');
+  return allBlocks
+    .filter(b => !b.data.hasCustomPage)
+    .map(b => ({ params: { slug: b.data.slug }, props: { block: b.data } }));
+}
+
+const { block } = Astro.props;
+const b = block;
+---
+<Base title={`${b.name} — GoldenFocus`} description={b.summary}>
+  <article class="block-detail">
+    <div class="container">
+      <div class="block-header">
+        <span class="block-icon">{b.icon}</span>
+        <div>
+          <h1>{b.name}</h1>
+          {b.subtitle && <p class="block-subtitle">{b.subtitle}</p>}
+        </div>
+      </div>
+
+      <div class="meta-row">
+        <span class="meta-tag">v{b.version}</span>
+        {b.github && <a href={b.github} class="meta-link" target="_blank">GitHub</a>}
+        {b.github && <span class="meta-sep">&middot;</span>}
+        <span class="meta-text">{b.license || 'MIT'} License</span>
+        {b.platform && <>
+          <span class="meta-sep">&middot;</span>
+          <span class="meta-text">{b.platform}</span>
+        </>}
+        {b.kind === 'claude-plugin' && <>
+          <span class="meta-sep">&middot;</span>
+          <span class="meta-kind">Claude Code Plugin</span>
+        </>}
+      </div>
+
+      <section class="content">
+        {b.content?.what && <>
+          <h2>What it does</h2>
+          {b.content.what.split('\n\n').map((para: string) =>
+            <p set:html={para.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/`([^`]+)`/g, '<code>$1</code>')} />
+          )}
+        </>}
+
+        {b.content?.install && <>
+          <h2>Install</h2>
+          <pre><code>{b.content.install}</code></pre>
+        </>}
+
+        {b.content?.why && <>
+          <h2>Why it exists</h2>
+          {b.content.why.split('\n\n').map((para: string) =>
+            <p set:html={para.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/`([^`]+)`/g, '<code>$1</code>')} />
+          )}
+        </>}
+
+        {b.content?.how && b.content.how.length > 0 && <>
+          <h2>How it works</h2>
+          <ol>
+            {b.content.how.map((step: string) => <li set:html={step.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/`([^`]+)`/g, '<code>$1</code>')} />)}
+          </ol>
+        </>}
+
+        {b.content?.requirements && b.content.requirements.length > 0 && <>
+          <h2>Requirements</h2>
+          <ul>
+            {b.content.requirements.map((req: string) => <li>{req}</li>)}
+          </ul>
+        </>}
+
+        {b.components && <>
+          <h2>Components</h2>
+          <div class="components-grid">
+            {b.components.skills?.map((s: string) => (
+              <div class="component-item">
+                <span class="component-type">skill</span>
+                <span class="component-name">/{s}</span>
+              </div>
+            ))}
+            {b.components.hooks?.map((h: string) => (
+              <div class="component-item">
+                <span class="component-type">hook</span>
+                <span class="component-name">{h}</span>
+              </div>
+            ))}
+            {b.components.agents?.map((a: string) => (
+              <div class="component-item">
+                <span class="component-type">agent</span>
+                <span class="component-name">{a}</span>
+              </div>
+            ))}
+          </div>
+        </>}
+
+        <div class="origin-box">
+          <h3>A GoldenFocus block</h3>
+          <p>Part of the <a href="/">GoldenFocus</a> ecosystem — tools that fix the world piece by piece. Free, open, built to share.</p>
+        </div>
+      </section>
+    </div>
+  </article>
+</Base>
+
+<style>
+  .block-detail { padding: 60px 0; }
+
+  .block-header { display: flex; align-items: center; gap: 20px; margin-bottom: 16px; }
+  .block-icon { font-size: 48px; }
+  .block-header h1 { font-size: 36px; font-weight: 800; letter-spacing: -1px; }
+  .block-subtitle { color: var(--text-secondary); font-size: 16px; margin-top: 2px; }
+
+  .meta-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 40px;
+    font-size: 13px;
+    flex-wrap: wrap;
+  }
+  .meta-tag {
+    color: var(--gold-400);
+    border: 1px solid rgba(251, 191, 36, 0.2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+  .meta-link { font-weight: 500; }
+  .meta-sep { color: var(--text-muted); }
+  .meta-text { color: var(--text-secondary); }
+  .meta-kind {
+    color: var(--gold-400);
+    font-weight: 500;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .content h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-top: 40px;
+    margin-bottom: 12px;
+    letter-spacing: -0.3px;
+  }
+  .content p {
+    color: var(--text-secondary);
+    font-size: 15px;
+    line-height: 1.75;
+    margin-bottom: 12px;
+  }
+  .content ol, .content ul {
+    color: var(--text-secondary);
+    font-size: 15px;
+    line-height: 1.75;
+    padding-left: 24px;
+    margin-bottom: 12px;
+  }
+  .content li { margin-bottom: 6px; }
+  .content pre { margin: 16px 0; }
+
+  .components-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 16px 0;
+  }
+  .component-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: var(--ink-800);
+    border: 1px solid var(--ink-600);
+    border-radius: 8px;
+  }
+  .component-type {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--gold-400);
+    min-width: 50px;
+  }
+  .component-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .origin-box {
+    margin-top: 48px;
+    padding: 24px;
+    background: var(--ink-800);
+    border: 1px solid var(--ink-600);
+    border-radius: 12px;
+  }
+  .origin-box h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .origin-box p { font-size: 14px; color: var(--text-secondary); margin-bottom: 0; }
+</style>

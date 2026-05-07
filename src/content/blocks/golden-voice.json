@@ -1,0 +1,32 @@
+{
+  "slug": "golden-voice",
+  "name": "golden-voice",
+  "version": "0.1.0",
+  "icon": "🎙️",
+  "subtitle": "Clone your voice, speak anything, pay nothing",
+  "summary": "Clone your voice locally and use it for TTS — free forever, no API keys.",
+  "tags": ["voice", "tts", "python", "free"],
+  "kind": "code",
+  "license": "MIT",
+  "platform": "macOS",
+  "github": "https://github.com/goldenfocus/golden-cloud/tree/main/blocks/golden-voice",
+  "hasCustomPage": true,
+  "releasedAt": "2026-04-25",
+  "content": {
+    "what": "Record 30 seconds of yourself talking. golden-voice clones your voice locally using XTTS v2 and gives you a one-command TTS that sounds like you. No cloud, no API keys, no monthly bill.",
+    "why": "We were paying ElevenLabs $100/month for voice narration in our dev tools. It burned through quota fast with multiple sessions running, the quality was good but the cost didn't scale, and we wanted something we owned.\n\nSo we built it. One afternoon, zero budget. Now every developer on the team has their own voice clone running on their laptop.",
+    "how": [
+      "You record 15-30 seconds of yourself talking naturally",
+      "XTTS v2 (open source, from Coqui) analyzes your voice — pitch, cadence, timbre",
+      "Any text you pipe in gets synthesized in your voice, locally, on CPU",
+      "Optional sox effects — reverb, chorus, echo for flavor"
+    ],
+    "install": "git clone https://github.com/goldenfocus/golden-cloud.git\ncd golden-cloud/blocks/golden-voice\nbash install.sh",
+    "requirements": [
+      "macOS (Apple Silicon or Intel)",
+      "Python 3.11 (installer handles via brew)",
+      "~2GB disk for the XTTS model (downloaded once)",
+      "A 15-30 second recording of your voice"
+    ]
+  }
+}

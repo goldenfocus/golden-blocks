@@ -1,16 +1,14 @@
 ---
 import Base from '../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
 
-const blocks = [
-  {
-    slug: 'golden-voice',
-    icon: '🎙️',
-    name: 'golden-voice',
-    summary: 'Clone your voice locally and use it for TTS — free forever, no API keys.',
-    tags: 'voice · tts · python · free',
-    status: 'v0.1.0',
-  },
-];
+const allBlocks = await getCollection('blocks');
+const blocks = allBlocks
+  .sort((a, b) => {
+    const da = a.data.releasedAt || '0000';
+    const db = b.data.releasedAt || '0000';
+    return db.localeCompare(da);
+  });
 ---
 <Base title="Blocks — GoldenFocus" description="Free, open source tools. Each one solves a real problem.">
   <section class="blocks-page">
@@ -20,15 +18,16 @@ const blocks = [
 
       <div class="block-grid">
         {blocks.map(b => (
-          <a href={`/blocks/${b.slug}`} class="block-card">
-            <div class="block-card-icon">{b.icon}</div>
+          <a href={`/blocks/${b.data.slug}`} class="block-card">
+            <div class="block-card-icon">{b.data.icon}</div>
             <div class="block-card-body">
               <div class="block-card-header">
-                <h3>{b.name}</h3>
-                <span class="block-version">{b.status}</span>
+                <h3>{b.data.name}</h3>
+                <span class="block-version">v{b.data.version}</span>
+                {b.data.kind === 'claude-plugin' && <span class="block-kind">plugin</span>}
               </div>
-              <p>{b.summary}</p>
-              <span class="block-card-tag">{b.tags}</span>
+              <p>{b.data.summary}</p>
+              <span class="block-card-tag">{b.data.tags.join(' · ')}</span>
             </div>
           </a>
         ))}
@@ -70,6 +69,16 @@ const blocks = [
     padding: 2px 8px;
     border-radius: 4px;
     font-weight: 500;
+  }
+  .block-kind {
+    font-size: 10px;
+    color: var(--text-muted);
+    border: 1px solid var(--ink-500);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
   .block-card-tag {
     display: inline-block;
